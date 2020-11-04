@@ -34,13 +34,13 @@ namespace LOU
         private InputController inputController;
         private LocalPlayer player;
 
-        private IEnumerable<ClientStatus.FINDBUTTONStruct> FindButtonResults;
-        private IEnumerable<ClientStatus.FINDINPUTStruct> FindInputResults;
-        private IEnumerable<ClientStatus.FINDITEMStruct> FindItemResults;
-        private IEnumerable<ClientStatus.FINDLABELStruct> FindLabelResults;
-        private IEnumerable<ClientStatus.FINDMOBILEStruct> FindMobileResults;
-        private IEnumerable<ClientStatus.FINDPANELStruct> FindPanelResults;
-        private IEnumerable<ClientStatus.FINDPERMANENTStruct> FindPermanentResults;
+        private Dictionary<String, DynamicObject> FindItemResults;
+        private Dictionary<String, ClientObject> FindPermanentResults;
+        private Dictionary<String, FloatingPanel> FindPanelResults;
+        private Dictionary<int, String> FindButtonResults;
+        private List<DynamicWindowTextField> FindInputResults;
+        private Dictionary<int, String> FindLabelResults;
+        private List<MobileInstance> FindMobileResults;
 
         private Dictionary<String, object> CustomVars;
 
@@ -206,8 +206,7 @@ namespace LOU
                         {
                             var watch = new System.Diagnostics.Stopwatch();
                             watch.Start();
-
-                            Dictionary<string, DynamicObject> items = new Dictionary<string, DynamicObject>();
+                            this.FindItemResults = new Dictionary<string, DynamicObject>();
 
                             // Try by ObjectId
                             string _objectId = ExtractParam(ClientCommand.CommandParams, 0);
@@ -216,45 +215,23 @@ namespace LOU
                                 DynamicObject dynamicObject = Utils.FindDynamicObject(objectId);
                                 if (dynamicObject != null)
                                 {
-                                    items[objectId.ToString()] = dynamicObject;
+                                    this.FindItemResults.Add(objectId.ToString(), dynamicObject);
                                     break;
                                 }
-                            } else
-                            {
-                                // Try by Name (and ContainerId if required)
-                                string objectName = ExtractParam(ClientCommand.CommandParams, 0);
-                                string _containerId = ExtractParam(ClientCommand.CommandParams, 1);
-                                ulong containerId;
-
-                                if (_containerId != null && _containerId != "" && ulong.TryParse(_containerId, out containerId))
-                                {
-                                    items = Utils.FindDynamicObjectsByName(objectName, containerId);
-                                }
-                                else
-                                {
-                                    items = Utils.FindDynamicObjectsByName(objectName);
-                                }
                             }
 
-                            try {
-                                this.FindItemResults =
-                                    items?.Select(f => new ClientStatus.FINDITEMStruct()
-                                    {
-                                        CNTID = f.Value.ContainerId,
-                                        DISTANCE = f.Value.ContainerId == 0 ? Vector3.Distance(f.Value.transform.position, this.player.transform.position) : 0,
-                                        ID = f.Value.ObjectId,
-                                        NAME = f.Value.EBHEDGHBHGI,
-                                        X = f.Value.transform?.position.x,
-                                        Y = f.Value.transform?.position.y,
-                                        Z = f.Value.transform?.position.z,
-                                    })
-                                    .OrderBy(f => f.DISTANCE);
-                            }
-                            catch (Exception ex)
+                            // Try by Name (and ContainerId if required)
+                            string objectName = ExtractParam(ClientCommand.CommandParams, 0);
+                            string _containerId = ExtractParam(ClientCommand.CommandParams, 1);
+                            ulong containerId;
+
+                            if (_containerId != null && _containerId != "" && ulong.TryParse(_containerId, out containerId))
                             {
-                                this.FindItemResults = null;
-                                Utils.Log("Error building FindItemResults!");
-                                Utils.Log(ex.ToString());
+                                this.FindItemResults = Utils.FindDynamicObjectsByName(objectName, containerId);
+                            }
+                            else
+                            {
+                                this.FindItemResults = Utils.FindDynamicObjectsByName(objectName);
                             }
 
                             watch.Stop();
@@ -266,8 +243,7 @@ namespace LOU
                         {
                             var watch = new System.Diagnostics.Stopwatch();
                             watch.Start();
-
-                            Dictionary<string, ClientObject> permanentObjects = new Dictionary<string, ClientObject>();
+                            this.FindPermanentResults = new Dictionary<string, ClientObject>();
 
                             // Try by PermanentId
                             string _permanentId = ExtractParam(ClientCommand.CommandParams, 0);
@@ -276,61 +252,21 @@ namespace LOU
                                 ClientObject clientObject = Utils.FindPermanentObject(permanentId);
                                 if (clientObject != null)
                                 {
-                                    permanentObjects.Add(permanentId.ToString(), clientObject);
+                                    this.FindPermanentResults.Add(permanentId.ToString(), clientObject);
                                     break;
                                 }
                             }
+
+                            // Try by Name and distance (if required)
+                            string permanentName = ExtractParam(ClientCommand.CommandParams, 0);
+                            string _distance = ExtractParam(ClientCommand.CommandParams, 1);
+                            if (_distance != null && _distance != "" && float.TryParse(_distance, out float distance))
+                            {
+                                this.FindPermanentResults = Utils.FindPermanentObjectByName(permanentName, distance);
+                            }
                             else
                             {
-                                // Try by Name and distance (if required)
-                                string permanentName = ExtractParam(ClientCommand.CommandParams, 0);
-                                string _distance = ExtractParam(ClientCommand.CommandParams, 1);
-                                if (_distance != null && _distance != "" && float.TryParse(_distance, out float distance))
-                                {
-                                    permanentObjects = Utils.FindPermanentObjectByName(permanentName, distance);
-                                }
-                                else
-                                {
-                                    permanentObjects = Utils.FindPermanentObjectByName(permanentName);
-                                }
-                            }
-
-                            try {
-                                this.FindPermanentResults =  permanentObjects?.Select(f => new ClientStatus.FINDPERMANENTStruct()
-                                    {
-                                        COLOR =
-                                            f.Value?.GetComponentInChildren<Renderer>()?.materials?.Where(m => m != null && m.HasProperty("_Color") && m.color != null)?.Select(m => ColorUtility.ToHtmlStringRGBA(m.color)) != null
-                                            ?
-                                            String.Join(",", f.Value?.GetComponentInChildren<Renderer>()?.materials?.Where(m => m != null && m.HasProperty("_Color") && m.color != null)?.Select(m => ColorUtility.ToHtmlStringRGBA(m.color)))
-                                            :
-                                            null,
-                                        DISTANCE = Vector3.Distance(f.Value.transform.position, this.player.transform.position),
-                                        HUE =
-                                            f.Value?.GetComponentInChildren<Renderer>()?.materials?.Where(m => m != null && m.HasProperty("_Hue"))?.Select(m => m.GetInt("_Hue").ToString()) != null
-                                            ?
-                                            String.Join(",", f.Value?.GetComponentInChildren<Renderer>()?.materials?.Where(m => m != null && m.HasProperty("_Hue"))?.Select(m => m.GetInt("_Hue").ToString()))
-                                            :
-                                            null,
-                                        ID = f.Value?.PermanentId,
-                                        NAME = f.Value?.name,
-                                        STONESTATE = (int?)Utils.GetInstanceField(f.Value?.GetComponent<StoneStateHandler>(), "IKKDABEEPAF"),
-                                        TEXTURE =
-                                            f.Value?.GetComponentInChildren<Renderer>()?.materials?.Where(m => m != null && m.mainTexture != null).Select(m => m.mainTexture.name) != null
-                                            ?
-                                            String.Join(",", f.Value?.GetComponentInChildren<Renderer>()?.materials?.Where(m => m != null && m.mainTexture != null).Select(m => m.mainTexture.name))
-                                            :
-                                            null,
-                                        TREESTATE = (int?)Utils.GetInstanceField(f.Value?.GetComponent<TreeStateHandler>(), "IKKDABEEPAF"),
-                                        X = f.Value?.transform?.position.x,
-                                        Y = f.Value?.transform?.position.y,
-                                        Z = f.Value?.transform?.position.z,
-                                    })
-                                    .OrderBy(f => f.DISTANCE);
-                            } catch (Exception ex)
-                            {
-                                this.FindPermanentResults = null;
-                                Utils.Log("Error building FindPermanentResults!");
-                                Utils.Log(ex.ToString());
+                                this.FindPermanentResults = Utils.FindPermanentObjectByName(permanentName);
                             }
 
                             watch.Stop();
@@ -345,20 +281,7 @@ namespace LOU
 
                             string _panelName = ExtractParam(ClientCommand.CommandParams, 0);
 
-                            Dictionary<string, FloatingPanel> panels = Utils.FindPanelByName(_panelName);
-
-                            try {
-                                this.FindPanelResults =
-                                    panels?.Select(f => new ClientStatus.FINDPANELStruct()
-                                    {
-                                        ID = f.Key
-                                    });
-                            } catch (Exception ex)
-                            {
-                                this.FindPanelResults = null;
-                                Utils.Log("Error building FindPanelResults!");
-                                Utils.Log(ex.ToString());
-                            }
+                            this.FindPanelResults = Utils.FindPanelByName(_panelName);
 
                             watch.Stop();
                             Utils.Log("FindPanel took " + watch.ElapsedMilliseconds.ToString() + "ms");
@@ -369,8 +292,12 @@ namespace LOU
                         {
                             var watch = new System.Diagnostics.Stopwatch();
                             watch.Start();
+<<<<<<< HEAD
 
                             List<ClientStatus.FINDBUTTONStruct> buttons = new List<ClientStatus.FINDBUTTONStruct>();
+=======
+                            this.FindButtonResults = new Dictionary<int, string>();
+>>>>>>> parent of 18e67ea... refactoring how find variables are cached
 
                             string _containerName = ExtractParam(ClientCommand.CommandParams, 0);
 
@@ -405,11 +332,15 @@ namespace LOU
                                                     if (int.TryParse(Collider.name, out int ButtonID))
                                                     {
                                                         Utils.Log("Collider " + Collider.name + " found by coordinates!");
+<<<<<<< HEAD
                                                         buttons.Add(new ClientStatus.FINDBUTTONStruct()
                                                         {
                                                             NAME = ButtonID.ToString(),
                                                             TEXT = x.ToString() + "-" + y.ToString()
                                                         });
+=======
+                                                        this.FindButtonResults[ButtonID] = x.ToString() + "-" + y.ToString();
+>>>>>>> parent of 18e67ea... refactoring how find variables are cached
                                                     }
                                                 }
                                             }
@@ -452,11 +383,15 @@ namespace LOU
                                                             if (int.TryParse(Collider.name, out int ButtonID))
                                                             {
                                                                 Utils.Log("Collider " + Collider.name + " found!");
+<<<<<<< HEAD
                                                                 buttons.Add(new ClientStatus.FINDBUTTONStruct()
                                                                 {
                                                                     NAME = ButtonID.ToString(),
                                                                     TEXT = Label.FJNGNLHHOEI
                                                                 });
+=======
+                                                                this.FindButtonResults[ButtonID] = Label.FJNGNLHHOEI;
+>>>>>>> parent of 18e67ea... refactoring how find variables are cached
                                                             }
                                                         }
                                                     }
@@ -479,22 +414,30 @@ namespace LOU
                                                 if (KFBLLAJBKAD != null && (string.IsNullOrEmpty(_buttonName) || KFBLLAJBKAD.ToLower().Contains(_buttonName.ToLower())))
                                                 {
                                                     Utils.Log("Found DynamicWindow Action by KFBLLAJBKAD!");
+<<<<<<< HEAD
                                                     buttons.Add(new ClientStatus.FINDBUTTONStruct()
                                                     {
                                                         NAME = i.ToString(),
                                                         TEXT = KFBLLAJBKAD
                                                     });
+=======
+                                                    this.FindButtonResults[i] = KFBLLAJBKAD;
+>>>>>>> parent of 18e67ea... refactoring how find variables are cached
                                                 }
 
                                                 string KFFEBNDBIPA = (string)Utils.GetInstanceField(KAAFKBBECEF, casted, "KFFEBNDBIPA");
                                                 if (KFFEBNDBIPA != null && (string.IsNullOrEmpty(_buttonName) || KFFEBNDBIPA.ToLower().Contains(_buttonName.ToLower())))
                                                 {
                                                     Utils.Log("Found DynamicWindow Action by KFFEBNDBIPA!");
+<<<<<<< HEAD
                                                     buttons.Add(new ClientStatus.FINDBUTTONStruct()
                                                     {
                                                         NAME = i.ToString(),
                                                         TEXT = KFFEBNDBIPA
                                                     });
+=======
+                                                    this.FindButtonResults[i] = KFFEBNDBIPA;
+>>>>>>> parent of 18e67ea... refactoring how find variables are cached
                                                 }
 
                                                 // Seems to be ToolTip Text
@@ -502,44 +445,60 @@ namespace LOU
                                                 if (ELGLAFGJGAO != null && (string.IsNullOrEmpty(_buttonName) || ELGLAFGJGAO.ToLower().Contains(_buttonName.ToLower())))
                                                 {
                                                     Utils.Log("Found DynamicWindow Action by ELGLAFGJGAO!");
+<<<<<<< HEAD
                                                     buttons.Add(new ClientStatus.FINDBUTTONStruct()
                                                     {
                                                         NAME = i.ToString(),
                                                         TEXT = ELGLAFGJGAO
                                                     });
+=======
+                                                    this.FindButtonResults[i] = ELGLAFGJGAO;
+>>>>>>> parent of 18e67ea... refactoring how find variables are cached
                                                 }
 
                                                 string PDENMACFHFK = (string)Utils.GetInstanceField(KAAFKBBECEF, casted, "PDENMACFHFK");
                                                 if (PDENMACFHFK != null && (string.IsNullOrEmpty(_buttonName) || PDENMACFHFK.ToLower().Contains(_buttonName.ToLower())))
                                                 {
                                                     Utils.Log("Found DynamicWindow Action by PDENMACFHFK!");
+<<<<<<< HEAD
                                                     buttons.Add(new ClientStatus.FINDBUTTONStruct()
                                                     {
                                                         NAME = i.ToString(),
                                                         TEXT = PDENMACFHFK
                                                     });
+=======
+                                                    this.FindButtonResults[i] = PDENMACFHFK;
+>>>>>>> parent of 18e67ea... refactoring how find variables are cached
                                                 }
 
                                                 string OEFOJOODPBK = (string)Utils.GetInstanceField(KAAFKBBECEF, casted, "OEFOJOODPBK");
                                                 if (OEFOJOODPBK != null && (string.IsNullOrEmpty(_buttonName) || OEFOJOODPBK.ToLower().Contains(_buttonName.ToLower())))
                                                 {
                                                     Utils.Log("Found DynamicWindow Action by OEFOJOODPBK!");
+<<<<<<< HEAD
                                                     buttons.Add(new ClientStatus.FINDBUTTONStruct()
                                                     {
                                                         NAME = i.ToString(),
                                                         TEXT = OEFOJOODPBK
                                                     });
+=======
+                                                    this.FindButtonResults[i] = OEFOJOODPBK;
+>>>>>>> parent of 18e67ea... refactoring how find variables are cached
                                                 }
 
                                                 string JCIPDLPHPFB = (string)Utils.GetInstanceField(KAAFKBBECEF, casted, "JCIPDLPHPFB");
                                                 if (JCIPDLPHPFB != null && (string.IsNullOrEmpty(_buttonName) || ELGLAFGJGAO.ToLower().Contains(_buttonName.ToLower())))
                                                 {
                                                     Utils.Log("Found DynamicWindow Action by JCIPDLPHPFB!");
+<<<<<<< HEAD
                                                     buttons.Add(new ClientStatus.FINDBUTTONStruct()
                                                     {
                                                         NAME = i.ToString(),
                                                         TEXT = JCIPDLPHPFB
                                                     });
+=======
+                                                    this.FindButtonResults[i] = JCIPDLPHPFB;
+>>>>>>> parent of 18e67ea... refactoring how find variables are cached
                                                 }
 
                                                 i++;
@@ -549,8 +508,11 @@ namespace LOU
                                 }
                             }
 
+<<<<<<< HEAD
                             this.FindButtonResults = buttons;
 
+=======
+>>>>>>> parent of 18e67ea... refactoring how find variables are cached
                             watch.Stop();
                             Utils.Log("FindButton took " + watch.ElapsedMilliseconds.ToString() + "ms");
                             break;
@@ -561,7 +523,7 @@ namespace LOU
                             var watch = new System.Diagnostics.Stopwatch();
                             watch.Start();
 
-                            List<ClientStatus.FINDINPUTStruct> inputs = new List<ClientStatus.FINDINPUTStruct>();
+                            this.FindInputResults = new List<DynamicWindowTextField>();
 
                             string _containerName = ExtractParam(ClientCommand.CommandParams, 0);
                             string _inputName = ExtractParam(ClientCommand.CommandParams, 1);
@@ -583,17 +545,13 @@ namespace LOU
                                             if (string.IsNullOrEmpty(_inputName) || Input.gameObject.name.ToLower().Contains(_inputName.ToLower()))
                                             {
                                                 Utils.Log("DynamicWindowTextField " + Input.gameObject.name + " found!");
-                                                inputs.Add(new ClientStatus.FINDINPUTStruct()
-                                                {
-                                                    ID = Input.gameObject?.name
-                                                });
+
+                                                this.FindInputResults.Add(Input);
                                             }
                                         }
                                     }
                                 }
                             }
-
-                            this.FindInputResults = inputs;
 
                             watch.Stop();
                             Utils.Log("FindInput took " + watch.ElapsedMilliseconds.ToString() + "ms");
@@ -604,8 +562,12 @@ namespace LOU
                         {
                             var watch = new System.Diagnostics.Stopwatch();
                             watch.Start();
+<<<<<<< HEAD
 
                             List<KeyValuePair<int, string>> labels = new List<KeyValuePair<int, string>>();
+=======
+                            this.FindLabelResults = new Dictionary<int, string>();
+>>>>>>> parent of 18e67ea... refactoring how find variables are cached
 
                             string _containerName = ExtractParam(ClientCommand.CommandParams, 0);
 
@@ -660,7 +622,11 @@ namespace LOU
                                                         }
                                                     }
 
+<<<<<<< HEAD
                                                     labels.Add(new KeyValuePair<int, string>(ButtonID, FullLabelText));
+=======
+                                                    this.FindLabelResults[ButtonID] = FullLabelText;
+>>>>>>> parent of 18e67ea... refactoring how find variables are cached
                                                     break;
                                                 }
                                             }
@@ -701,7 +667,11 @@ namespace LOU
                                                     }
                                                 }
 
+<<<<<<< HEAD
                                                 labels.Add(new KeyValuePair<int, string>(ButtonID, FullLabelText));
+=======
+                                                this.FindLabelResults[ButtonID] = FullLabelText;
+>>>>>>> parent of 18e67ea... refactoring how find variables are cached
                                                 break;
                                             }
                                         }
@@ -755,7 +725,11 @@ namespace LOU
                                                                 }
                                                             }
 
+<<<<<<< HEAD
                                                             labels.Add(new KeyValuePair<int, string>(ButtonID, FullLabelText));
+=======
+                                                            this.FindLabelResults[ButtonID] = FullLabelText;
+>>>>>>> parent of 18e67ea... refactoring how find variables are cached
                                                             break;
                                                         }
                                                     }
@@ -764,22 +738,6 @@ namespace LOU
                                         }
                                     }
                                 }
-                            }
-
-                            try {
-                                this.FindLabelResults = 
-                                    labels.Select(f => new ClientStatus.FINDLABELStruct()
-                                    {
-                                        NAME = f.Key.ToString(),
-                                        TEXT = f.Value
-                                    })
-                                    .ToArray();
-                            }
-                            catch (Exception ex)
-                            {
-                                this.FindLabelResults = null;
-                                Utils.Log("Error building FindLabelResults!");
-                                Utils.Log(ex.ToString());
                             }
 
                             watch.Stop();
@@ -1107,7 +1065,7 @@ namespace LOU
 
                     case CommandType.FindMobile:
                         {
-                            List<MobileInstance> mobiles = new List<MobileInstance>();
+                            this.FindMobileResults = new List<MobileInstance>();
 
                             // Try by ObjectId
                             string _objectId = ExtractParam(ClientCommand.CommandParams, 0);
@@ -1117,49 +1075,24 @@ namespace LOU
                                 MobileInstance mobile = Utils.GetMobile(objectId);
                                 if (mobile != null)
                                 {
-                                    mobiles.Add(mobile);
+                                    this.FindMobileResults.Add(mobile);
                                     break;
                                 }
-                            } else
+                            }
+
+                            // Try by Name and distance (if required)
+                            string name = ExtractParam(ClientCommand.CommandParams, 0);
+                            string _distance = ExtractParam(ClientCommand.CommandParams, 1);
+                            if (_distance != null && _distance != "" && float.TryParse(_distance, out float distance))
                             {
-                                // Try by Name and distance (if required)
-                                string name = ExtractParam(ClientCommand.CommandParams, 0);
-                                string _distance = ExtractParam(ClientCommand.CommandParams, 1);
-                                if (_distance != null && _distance != "" && float.TryParse(_distance, out float distance))
-                                {
-                                    mobiles = Utils.FindMobile(name, distance);
-                                }
-                                else
-                                {
-                                    mobiles = Utils.FindMobile(name);
-                                }
+                                this.FindMobileResults = Utils.FindMobile(name, distance);
                             }
-
-                            try {
-                                this.FindMobileResults =
-                                    mobiles?.Select(f => new ClientStatus.FINDMOBILEStruct()
-                                    {
-
-                                        DISTANCE = Vector3.Distance(f.transform.position, this.player.transform.position),
-                                        HP = f.GetStatByName("Health"),
-                                        ID = f.ObjectId,
-                                        NAME = f.EBHEDGHBHGI,
-                                        TYPE = f.DKCMJFOPPDL,
-                                        X = f.transform?.position.x,
-                                        Y = f.transform?.position.y,
-                                        Z = f.transform?.position.z
-                                    })
-                                    .OrderBy(f => f.DISTANCE)
-                                    .ToArray();
-                            }
-                            catch (Exception ex)
+                            else
                             {
-                                this.FindMobileResults = null;
-                                Utils.Log("Error building FindMobileResults!");
-                                Utils.Log(ex.ToString());
+                                this.FindMobileResults = Utils.FindMobile(name);
                             }
 
-                        break;
+                            break;
                         }
 
                     case CommandType.SetUsername:
@@ -1565,13 +1498,170 @@ namespace LOU
 
             // Find
 
-            ClientStatus.Find.FINDBUTTON = this.FindButtonResults?.ToArray();
-            ClientStatus.Find.FINDINPUT = this.FindInputResults?.ToArray();
-            ClientStatus.Find.FINDITEM = this.FindItemResults?.ToArray();
-            ClientStatus.Find.FINDLABEL = this.FindLabelResults?.ToArray();
-            ClientStatus.Find.FINDMOBILE = this.FindMobileResults?.ToArray();
-            ClientStatus.Find.FINDPANEL = this.FindPanelResults?.ToArray();
-            ClientStatus.Find.FINDPERMANENT = this.FindPermanentResults?.ToArray();
+            try {
+                ClientStatus.Find.FINDBUTTON =
+                    this
+                    .FindButtonResults?
+                    .Select(f => new ClientStatus.FINDBUTTONStruct() {
+                        NAME = f.Key.ToString(), TEXT = f.Value
+                    })
+                    .ToArray();
+            }
+            catch (Exception ex)
+            {
+                ClientStatus.Find.FINDBUTTON = null;
+                Utils.Log("Error building FINDBUTTON!");
+                Utils.Log(ex.ToString());
+            }
+
+            try
+            {
+                ClientStatus.Find.FINDINPUT =
+                    this
+                    .FindInputResults?
+                    .Select(f => new ClientStatus.FINDINPUTStruct()
+                    {
+                        ID = f.gameObject.name
+                    })
+                    .ToArray();
+            }
+            catch (Exception ex)
+            {
+                ClientStatus.Find.FINDINPUT = null;
+                Utils.Log("Error building FINDINPUT!");
+                Utils.Log(ex.ToString());
+            }
+
+            try
+            {
+                ClientStatus.Find.FINDITEM =
+                    this
+                    .FindItemResults?
+                    .Select(f => new ClientStatus.FINDITEMStruct()
+                    {
+                        CNTID = f.Value.ContainerId,
+                        DISTANCE = f.Value.ContainerId == 0 ? Vector3.Distance(f.Value.transform.position, this.player.transform.position) : 0,
+                        ID = f.Value.ObjectId,
+                        NAME = f.Value.EBHEDGHBHGI,
+                        X = f.Value.transform?.position.x,
+                        Y = f.Value.transform?.position.y,
+                        Z = f.Value.transform?.position.z,
+                    })
+                    .OrderBy(f => f.DISTANCE)
+                    .ToArray();
+            }
+            catch (Exception ex)
+            {
+                ClientStatus.Find.FINDITEM = null;
+                Utils.Log("Error building FINDITEM!");
+                Utils.Log(ex.ToString());
+            }
+
+            try
+            {
+                ClientStatus.Find.FINDLABEL =
+                    this
+                    .FindLabelResults?
+                    .Select(f => new ClientStatus.FINDLABELStruct()
+                    {
+                        NAME = f.Key.ToString(),
+                        TEXT = f.Value
+                    })
+                    .ToArray();
+            }
+            catch (Exception ex)
+            {
+                ClientStatus.Find.FINDLABEL = null;
+                Utils.Log("Error building FINDLABEL!");
+                Utils.Log(ex.ToString());
+            }
+
+            try
+            {
+                ClientStatus.Find.FINDMOBILE =
+                    this
+                    .FindMobileResults?
+                    .Select(f => new ClientStatus.FINDMOBILEStruct()
+                    {
+
+                        DISTANCE = Vector3.Distance(f.transform.position, this.player.transform.position),
+                        HP = f.GetStatByName("Health"),
+                        ID = f.ObjectId,
+                        NAME = f.EBHEDGHBHGI,
+                        TYPE = f.DKCMJFOPPDL,
+                        X = f.transform?.position.x,
+                        Y = f.transform?.position.y,
+                        Z = f.transform?.position.z
+                    })
+                    .OrderBy(f => f.DISTANCE)
+                    .ToArray();
+            }
+            catch (Exception ex)
+            {
+                ClientStatus.Find.FINDMOBILE = null;
+                Utils.Log("Error building FINDMOBILE!");
+                Utils.Log(ex.ToString());
+            }
+
+            try
+            {
+                ClientStatus.Find.FINDPANEL =
+                    this
+                    .FindPanelResults?
+                    .Select(f => new ClientStatus.FINDPANELStruct()
+                    {
+                        ID = f.Key
+                    })
+                    .ToArray();
+            } catch (Exception ex)
+            {
+                ClientStatus.Find.FINDPANEL = null;
+                Utils.Log("Error building FINDPANEL!");
+                Utils.Log(ex.ToString());
+            }
+
+            try
+            {
+                ClientStatus.Find.FINDPERMANENT =
+                    this
+                    .FindPermanentResults?
+                    .Select(f => new ClientStatus.FINDPERMANENTStruct()
+                    {
+                        COLOR =
+                            f.Value?.GetComponentInChildren<Renderer>()?.materials?.Where(m => m != null && m.HasProperty("_Color") && m.color != null)?.Select(m => ColorUtility.ToHtmlStringRGBA(m.color)) != null
+                            ?
+                            String.Join(",", f.Value?.GetComponentInChildren<Renderer>()?.materials?.Where(m => m != null && m.HasProperty("_Color") && m.color != null)?.Select(m => ColorUtility.ToHtmlStringRGBA(m.color)))
+                            :
+                            null,
+                        DISTANCE = Vector3.Distance(f.Value.transform.position, this.player.transform.position),
+                        HUE =
+                            f.Value?.GetComponentInChildren<Renderer>()?.materials?.Where(m => m != null && m.HasProperty("_Hue"))?.Select(m => m.GetInt("_Hue").ToString()) != null
+                            ?
+                            String.Join(",", f.Value?.GetComponentInChildren<Renderer>()?.materials?.Where(m => m != null && m.HasProperty("_Hue"))?.Select(m => m.GetInt("_Hue").ToString()))
+                            :
+                            null,
+                        ID = f.Value?.PermanentId,
+                        NAME = f.Value?.name,
+                        STONESTATE = (int?)Utils.GetInstanceField(f.Value?.GetComponent<StoneStateHandler>(), "IKKDABEEPAF"),
+                        TEXTURE =
+                            f.Value?.GetComponentInChildren<Renderer>()?.materials?.Where(m => m != null && m.mainTexture != null).Select(m => m.mainTexture.name) != null
+                            ?
+                            String.Join(",", f.Value?.GetComponentInChildren<Renderer>()?.materials?.Where(m => m != null && m.mainTexture != null).Select(m => m.mainTexture.name))
+                            :
+                            null,
+                        TREESTATE = (int?)Utils.GetInstanceField(f.Value?.GetComponent<TreeStateHandler>(), "IKKDABEEPAF"),
+                        X = f.Value?.transform?.position.x,
+                        Y = f.Value?.transform?.position.y,
+                        Z = f.Value?.transform?.position.z,
+                    })
+                    .OrderBy(f => f.DISTANCE)
+                    .ToArray();
+            } catch (Exception ex)
+            {
+                ClientStatus.Find.FINDPERMANENT = null;
+                Utils.Log("Error building FINDPERMANENT!");
+                Utils.Log(ex.ToString());
+            }
 
             // Client Info
 
@@ -1616,32 +1706,22 @@ namespace LOU
 
             if (this.player != null)
             {
-                try
-                {
-                    ClientStatus.Miscellaneous.NEARBYMONSTERS =
-                        Utils.GetNearbyMobiles(5)?
-                        .Where(Mobile =>
-                            Mobile.DKCMJFOPPDL == "Monster" &&
-                            Mobile.BMHLGHANHDL != null &&
-                            !Mobile.GetObjectProperty<bool>("IsDead")
-                            )
-                        .Select(f => new ClientStatus.NEARBYMONSTERStruct()
-                        {
-                            DISTANCE = Vector3.Distance(f.transform.position, this.player.transform.position),
-                            HP = f.GetStatByName("Health"),
-                            ID = f.ObjectId,
-                            NAME = f.EBHEDGHBHGI
-                        })
-                        .ToArray();
-                    ClientStatus.Miscellaneous.MONSTERSNEARBY = (ClientStatus.Miscellaneous.NEARBYMONSTERS?.Count() ?? 0) > 0;
-                }
-                catch (Exception ex)
-                {
-                    ClientStatus.Miscellaneous.NEARBYMONSTERS = null;
-                    ClientStatus.Miscellaneous.MONSTERSNEARBY = null;
-                    Utils.Log("Error building NEARBYMONSTERS!");
-                    Utils.Log(ex.ToString());
-                }
+                ClientStatus.Miscellaneous.NEARBYMONSTERS =
+                    Utils.GetNearbyMobiles(5)?
+                    .Where(Mobile =>
+                        Mobile.DKCMJFOPPDL == "Monster" &&
+                        Mobile.BMHLGHANHDL != null &&
+                        !Mobile.GetObjectProperty<bool>("IsDead")
+                        )
+                    .Select(f => new ClientStatus.NEARBYMONSTERStruct()
+                    {
+                        DISTANCE = Vector3.Distance(f.transform.position, this.player.transform.position),
+                        HP = f.GetStatByName("Health"),
+                        ID = f.ObjectId,
+                        NAME = f.EBHEDGHBHGI
+                    })
+                    .ToArray();
+                ClientStatus.Miscellaneous.MONSTERSNEARBY = (ClientStatus.Miscellaneous.NEARBYMONSTERS?.Count() ?? 0) > 0;
             }
             else
             {
