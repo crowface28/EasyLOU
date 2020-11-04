@@ -294,8 +294,12 @@ namespace LOU
                             watch.Start();
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 
                             List<ClientStatus.FINDBUTTONStruct> buttons = new List<ClientStatus.FINDBUTTONStruct>();
+=======
+                            this.FindButtonResults = new Dictionary<int, string>();
+>>>>>>> parent of 18e67ea... refactoring how find variables are cached
 =======
                             this.FindButtonResults = new Dictionary<int, string>();
 >>>>>>> parent of 18e67ea... refactoring how find variables are cached
@@ -338,11 +342,15 @@ namespace LOU
                                                         Utils.Log("Collider " + Collider.name + " found by coordinates!");
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
                                                         buttons.Add(new ClientStatus.FINDBUTTONStruct()
                                                         {
                                                             NAME = ButtonID.ToString(),
                                                             TEXT = x.ToString() + "-" + y.ToString()
                                                         });
+=======
+                                                        this.FindButtonResults[ButtonID] = x.ToString() + "-" + y.ToString();
+>>>>>>> parent of 18e67ea... refactoring how find variables are cached
 =======
                                                         this.FindButtonResults[ButtonID] = x.ToString() + "-" + y.ToString();
 >>>>>>> parent of 18e67ea... refactoring how find variables are cached
@@ -393,11 +401,15 @@ namespace LOU
                                                                 Utils.Log("Collider " + Collider.name + " found!");
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
                                                                 buttons.Add(new ClientStatus.FINDBUTTONStruct()
                                                                 {
                                                                     NAME = ButtonID.ToString(),
                                                                     TEXT = Label.FJNGNLHHOEI
                                                                 });
+=======
+                                                                this.FindButtonResults[ButtonID] = Label.FJNGNLHHOEI;
+>>>>>>> parent of 18e67ea... refactoring how find variables are cached
 =======
                                                                 this.FindButtonResults[ButtonID] = Label.FJNGNLHHOEI;
 >>>>>>> parent of 18e67ea... refactoring how find variables are cached
@@ -428,11 +440,15 @@ namespace LOU
                                                     Utils.Log("Found DynamicWindow Action by KFBLLAJBKAD!");
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
                                                     buttons.Add(new ClientStatus.FINDBUTTONStruct()
                                                     {
                                                         NAME = i.ToString(),
                                                         TEXT = KFBLLAJBKAD
                                                     });
+=======
+                                                    this.FindButtonResults[i] = KFBLLAJBKAD;
+>>>>>>> parent of 18e67ea... refactoring how find variables are cached
 =======
                                                     this.FindButtonResults[i] = KFBLLAJBKAD;
 >>>>>>> parent of 18e67ea... refactoring how find variables are cached
@@ -447,11 +463,15 @@ namespace LOU
                                                     Utils.Log("Found DynamicWindow Action by KFFEBNDBIPA!");
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
                                                     buttons.Add(new ClientStatus.FINDBUTTONStruct()
                                                     {
                                                         NAME = i.ToString(),
                                                         TEXT = KFFEBNDBIPA
                                                     });
+=======
+                                                    this.FindButtonResults[i] = KFFEBNDBIPA;
+>>>>>>> parent of 18e67ea... refactoring how find variables are cached
 =======
                                                     this.FindButtonResults[i] = KFFEBNDBIPA;
 >>>>>>> parent of 18e67ea... refactoring how find variables are cached
@@ -467,11 +487,15 @@ namespace LOU
                                                     Utils.Log("Found DynamicWindow Action by ELGLAFGJGAO!");
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
                                                     buttons.Add(new ClientStatus.FINDBUTTONStruct()
                                                     {
                                                         NAME = i.ToString(),
                                                         TEXT = ELGLAFGJGAO
                                                     });
+=======
+                                                    this.FindButtonResults[i] = ELGLAFGJGAO;
+>>>>>>> parent of 18e67ea... refactoring how find variables are cached
 =======
                                                     this.FindButtonResults[i] = ELGLAFGJGAO;
 >>>>>>> parent of 18e67ea... refactoring how find variables are cached
@@ -486,11 +510,15 @@ namespace LOU
                                                     Utils.Log("Found DynamicWindow Action by PDENMACFHFK!");
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
                                                     buttons.Add(new ClientStatus.FINDBUTTONStruct()
                                                     {
                                                         NAME = i.ToString(),
                                                         TEXT = PDENMACFHFK
                                                     });
+=======
+                                                    this.FindButtonResults[i] = PDENMACFHFK;
+>>>>>>> parent of 18e67ea... refactoring how find variables are cached
 =======
                                                     this.FindButtonResults[i] = PDENMACFHFK;
 >>>>>>> parent of 18e67ea... refactoring how find variables are cached
@@ -505,11 +533,15 @@ namespace LOU
                                                     Utils.Log("Found DynamicWindow Action by OEFOJOODPBK!");
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
                                                     buttons.Add(new ClientStatus.FINDBUTTONStruct()
                                                     {
                                                         NAME = i.ToString(),
                                                         TEXT = OEFOJOODPBK
                                                     });
+=======
+                                                    this.FindButtonResults[i] = OEFOJOODPBK;
+>>>>>>> parent of 18e67ea... refactoring how find variables are cached
 =======
                                                     this.FindButtonResults[i] = OEFOJOODPBK;
 >>>>>>> parent of 18e67ea... refactoring how find variables are cached
@@ -524,11 +556,15 @@ namespace LOU
                                                     Utils.Log("Found DynamicWindow Action by JCIPDLPHPFB!");
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
                                                     buttons.Add(new ClientStatus.FINDBUTTONStruct()
                                                     {
                                                         NAME = i.ToString(),
                                                         TEXT = JCIPDLPHPFB
                                                     });
+=======
+                                                    this.FindButtonResults[i] = JCIPDLPHPFB;
+>>>>>>> parent of 18e67ea... refactoring how find variables are cached
 =======
                                                     this.FindButtonResults[i] = JCIPDLPHPFB;
 >>>>>>> parent of 18e67ea... refactoring how find variables are cached
@@ -546,8 +582,11 @@ namespace LOU
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
                             this.FindButtonResults = buttons;
 
+=======
+>>>>>>> parent of 18e67ea... refactoring how find variables are cached
 =======
 >>>>>>> parent of 18e67ea... refactoring how find variables are cached
 =======
@@ -603,8 +642,12 @@ namespace LOU
                             watch.Start();
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 
                             List<KeyValuePair<int, string>> labels = new List<KeyValuePair<int, string>>();
+=======
+                            this.FindLabelResults = new Dictionary<int, string>();
+>>>>>>> parent of 18e67ea... refactoring how find variables are cached
 =======
                             this.FindLabelResults = new Dictionary<int, string>();
 >>>>>>> parent of 18e67ea... refactoring how find variables are cached
@@ -667,7 +710,11 @@ namespace LOU
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
                                                     labels.Add(new KeyValuePair<int, string>(ButtonID, FullLabelText));
+=======
+                                                    this.FindLabelResults[ButtonID] = FullLabelText;
+>>>>>>> parent of 18e67ea... refactoring how find variables are cached
 =======
                                                     this.FindLabelResults[ButtonID] = FullLabelText;
 >>>>>>> parent of 18e67ea... refactoring how find variables are cached
@@ -716,7 +763,11 @@ namespace LOU
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
                                                 labels.Add(new KeyValuePair<int, string>(ButtonID, FullLabelText));
+=======
+                                                this.FindLabelResults[ButtonID] = FullLabelText;
+>>>>>>> parent of 18e67ea... refactoring how find variables are cached
 =======
                                                 this.FindLabelResults[ButtonID] = FullLabelText;
 >>>>>>> parent of 18e67ea... refactoring how find variables are cached
@@ -778,7 +829,11 @@ namespace LOU
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
                                                             labels.Add(new KeyValuePair<int, string>(ButtonID, FullLabelText));
+=======
+                                                            this.FindLabelResults[ButtonID] = FullLabelText;
+>>>>>>> parent of 18e67ea... refactoring how find variables are cached
 =======
                                                             this.FindLabelResults[ButtonID] = FullLabelText;
 >>>>>>> parent of 18e67ea... refactoring how find variables are cached
